@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+    <title>学术家族树</title>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="type.css">
+</head>
+
+<body>
+<script src="js/d3.v3.min.js"></script>
+<div class="flex-container">
+    <p id="title">家族树</p>
+    <textarea type="textarea" style="margin-top: 50px" id="text" cols="60" rows="10" class="center"
+              placeholder="请输入内容"></textarea>
+    <button href="javascript:;" onclick="getdata()" class="button_left">建立家族树</button>
+    <input type=button value=刷新 onclick="location.reload()" class="button_right">
+</div>
+<div class="svg-container">
+
+</div>
+<!--使用onclick触发下面的方法-->
+<script>
+    var treeData = [{
+        "name": "",
+        "parent": "",
+        "children": [{
+            "name": "",
+            "parent": "",
+            "children": [{
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            }, {
+                "name": "",
+                "parent": "",
+                "nianji": "",
+                "children": [{
+                    "name": "",
+                    parent: ""
+                }]
+            }, {
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            }, {
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            }]
+        }, {
+            "name": "",
+            "parent": "",
+            "children": [{
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            }, {
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            },]
+
+        }, {
+            "name": "",
+            "parent": "",
+            "nianji": ""
+        },]
+    }];
