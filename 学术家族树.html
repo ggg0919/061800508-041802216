@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" href="bootstrap/css/bootstrap.min.css">
+    <title>学术家族树</title>
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/jquery.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <link type="text/css" rel="stylesheet" href="type.css">
+</head>
+
+<body>
+<script src="js/d3.v3.min.js"></script>
+<div class="flex-container">
+    <p id="title">家族树</p>
+    <textarea type="textarea" style="margin-top: 50px" id="text" cols="60" rows="10" class="center"
+              placeholder="请输入内容"></textarea>
+    <button href="javascript:;" onclick="getdata()" class="button_left">建立家族树</button>
+    <input type=button value=刷新 onclick="location.reload()" class="button_right">
+</div>
+<div class="svg-container">
+
+</div>
+<!--使用onclick触发下面的方法-->
+<script>
+    var treeData = [{
+        "name": "",
+        "parent": "",
+        "children": [{
+            "name": "",
+            "parent": "",
+            "children": [{
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            }, {
+                "name": "",
+                "parent": "",
+                "nianji": "",
+                "children": [{
+                    "name": "",
+                    parent: ""
+                }]
+            }, {
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            }, {
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            }]
+        }, {
+            "name": "",
+            "parent": "",
+            "children": [{
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            }, {
+                "name": "",
+                "nianji": "",
+                "parent": ""
+            },]
+
+        }, {
+            "name": "",
+            "parent": "",
+            "nianji": ""
+        },]
+    }];
+
+
+    function getdata() {
+        $('.svg-container').empty();
+        var text = $("#text").val(); //获取id为text的textarea的全部内容
+        var text2 = $("#text").val().split(/导师[:|：]?/g);
+        var new_add = $("#text").val().split(/\n[^(导师)][:|：]?/g); // 追加内容
+        var new_add_flag = []; // 追加内容的标识;
+        //console.log(new_add);
+        var text3 = text2.filter(item => { // 过滤数组空元素
+            if (item.length > 1) {
+                return item;
+            }
+        });
+        for (let i = 0; i < text3.length; i++) {
+            text3[i] = '导师：' + text3[i];
+        }
+        var text1 = text.split("\n\n");//针对多组数据输入的情况，以“\n\n"为关键字进行分组，调用split函数进行分割
+        //console.log(text1);
+        //console.log(text3);
+        text1 = text3;
+        for (var k = 0; k < text1.length; k++) { //text1.length用于得到分组的数量
+            //console.log(text1[k]);
+            new_add_flag = [];
+            new_add = text1[k].split(/\n[^(导师)][:|：]?/g);
+            new_add = new_add.filter(function (item) {
+                let rexp = new RegExp(/[0-9]+级?/, 'ig');
+                //console.log(rexp, item.indexOf('导师') == -1, !/[0-9]+级?/ig.test(item));
+                if (item.indexOf('导师') == -1 && !/[0-9]+级?/ig.test(item)) {
+                    new_add_flag.push(item.replace(/[:|：]+[^0]+/, ''));
+                    return item;
+                }
+            });
+            //console.log('过滤', new_add, new_add_flag);
+
+            var arry = text1[k].split("\n");//针对每一组数据，以“\n"为关键字进行分组，得到每条导师和学生的信息
+            var teacher = {
+                name: '',
+                nianji: '',
+                children: []
+            };
+            let zhiChengObj = {}; // 职称分类对象集合
+            let zhicheng_arr = []; // 全部职称是数组
+            let nianji_arr = []; // 年级的集合
+            let nianji = [];
+
+            for (var ii = 0; ii < arry.length; ii++) { // for2判断有没有重复的职称
+
+                if (/\n+/.test(arry[ii]) || arry[ii].length <= 1) {
+                    //console.log('匹配成功');
+                } else {
+                    var newarr = arry[ii].split("：");//针对每条导师和学生的信息，以“：”为关键字进行分组，可得到身份标签和身份信息
+
+                    let go_on = true;
+                    new_add_flag.forEach(function (item) {
+                        //console.log(item, newarr, newarr.includes(item.trim()));
+                        if (newarr.includes(item.trim())) {
+                            go_on = false;
+                        }
+                    });
+                    if (go_on) {
+                        //console.log(arry[ii]);
+                        //console.log(newarr);
+                        var a1 = newarr[0]; //获取身份标签，如导师、2016级博士生等，保存在a1变量
+                        let strIndex = a1.indexOf('级');
+                        let nianjiItem = a1.substring(0, strIndex + 1); // 年级
+                        let zhicheng = a1.substring(strIndex + 1); // 职称
+                        //console.log(nianjiItem);
+                        var type = [];
+                        var type1 = [];
+
+                        //console.log(zhicheng);
+
+                        if (ii != 0) {
+                            type1.name = zhicheng; // 职称
+                        }
+                        var a2 = newarr[1]; //获取身份信息，如天一、王二、吴五等，保存在a2变量 [字符串]
+                        //console.log(a2);
+                        var a3 = a2.split("、"); //针对每组身份信息，以“、”为关键字进行切分，得到每个人的名字信息 [数组]
+
+                        //console.log(a3);
+
+                        if (!zhicheng_arr.includes(zhicheng)) { //&& zhicheng.indexOf('生')!= -1
+                            //console.log('已经存在', zhicheng);
+                            zhicheng_arr.push(zhicheng);
+                            if (!zhiChengObj[zhicheng]) {
+                                zhiChengObj[zhicheng] = [];
+                            }
+                            zhiChengObj[zhicheng].push(...a3);
+                            nianji_arr.push(nianjiItem);
+                        } else { //if (zhicheng.indexOf('生')!= -1)
+                            if (!zhiChengObj[zhicheng]) {
+                                zhiChengObj[zhicheng] = [];
+                            }
+                            zhiChengObj[zhicheng].push(...a3);
+                            nianji_arr.push(nianjiItem);
+                        }
+                    }
+                }
+            }
+
+            nianji_arr = nianji_arr.filter(function (item) {
+                if (item.length > 1) return item;
+            });
+            // //console.log(zhicheng_arr);
+            // //console.log(zhiChengObj);
+            // //console.log(nianji_arr);
+
+            /***********************/
+            let currentIndex = 0;
+            for (let key in zhiChengObj) {
+                let type = [];
+                let type1 = [];
+                let zhicheng = key;  // 职称
+                let nianji = [];
+                let is_daoshi = key.indexOf('导师') != -1 ? true : false; // 是不是导师
+                let zhicheng_val = zhiChengObj[key]; // 职称对应的值
+                // //console.log(zhicheng);
+                // //console.log(zhicheng_val);
+                // //console.log(is_daoshi);
+
+                zhicheng_val.forEach(function (item, j) {
+                    let student = {};
+
+                    if (is_daoshi) {
+                        teacher.name = item;
+                    } else {
+                        student.name = item; //zhicheng_val[j]
+
+                        new_add_flag.forEach(function (flag, ind) {
+                            //console.log(flag, item);
+                            if (flag == item) {
+                                let cont = new_add[ind].replace(/[^0]*[:|：]+/, '');
+                                let cont_arr = cont.split('、');
+                                //console.log(cont_arr);
+                                cont_arr.forEach(function (child) {
+                                    if (!student.children) {
+                                        student.children = [];
+                                    }
+                                    student.children.push({name: child});
+                                });
+                            }
+                        });
+                        type.push(student);
+                        // //console.log(student);
+                    }
+                });
+
+                if (is_daoshi == false) {
+                    type1.name = zhicheng; // 职称
+                    nianji.push({name: nianji_arr[currentIndex], children: type}); // 年级
+                }
+                // //console.log(type1); // 职称
+                // //console.log(nianji_arr[currentIndex]); // 多少级
+                // //console.log(type); // 人
+                // //console.log(nianji); // 多少级
+                if (is_daoshi == false) {
+                    // type1.children = type;
+                    type1.children = nianji;
+                    teacher.children.push(type1);
+                }
+                //console.log(teacher);
+
+                currentIndex++;
+            }
+
+            treeData[k] = [];
+            treeData[k] = teacher;
+            maketree(k);
+        }
+    }
+
+    function maketree(k) {
+        var margin = {
+                top: 20,
+                right: 120,
+                bottom: 20,
+                left: 120
+            },
+            width = 960 - margin.right - margin.left,
+            height = 500 - margin.top - margin.bottom;
+
+        var i = 0,
+            duration = 750, //过渡延迟时间
+            root;
+
+        var tree = d3.layout.tree() //创建一个树布局
+            .size([height, width]);
+
+
+        var diagonal = d3.svg.diagonal()
+            .projection(function (d) {
+                return [d.y, d.x];
+            }); //创建新的斜线生成器
+
+        //声明与定义画布属性
+        var svg = d3.select("body .svg-container").append("svg")
+            .attr("width", width + margin.right + margin.left)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+        root = treeData[k]; //treeData为上边定义的节点属性
+        root.x0 = height / 2;
+        root.y0 = 0;
+
+
+        update(root);
+
+
+        function update(source) {
+            // Compute the new tree layout.计算新树图的布局
+            var nodes = tree.nodes(root).reverse(),
+                links = tree.links(nodes);
+
+            // Normalize for fixed-depth.设置y坐标点，每层占180px
+            nodes.forEach(function (d) {
+                d.y = d.depth * 180;
+            });
+
+            // Update the nodes…每个node对应一个group
+            var node = svg.selectAll("g.node")
+                .data(nodes, function (d) {
+                    return d.id || (d.id = ++i);
+                }); //data()：绑定一个数组到选择集上，数组的各项值分别与选择集的各元素绑定
+
+            // Enter any new nodes at the parent's previous position.新增节点数据集，设置位置
+            var nodeEnter = node.enter().append("g") //在 svg 中添加一个g，g是 svg 中的一个属性，是 group 的意思，它表示一组什么东西，如一组 lines ， rects ，circles 其实坐标轴就是由这些东西构成的。
+                .attr("class", "node") //attr设置html属性，style设置css属性
+                .attr("transform", function (d) {
+                    return "translate(" + source.y0 + "," + source.x0 + ")";
+                })
+                .on("click", click);
+
+            //添加连接点---此处设置的是圆圈过渡时候的效果（颜色）
+            // nodeEnter.append("circle")
+            //   .attr("r", 1e-6)
+            //   .style("fill", function(d) { return d._children ? "lightsteelblue" : "#357CAE"; });//d 代表数据，也就是与某元素绑定的数据。
+            nodeEnter.append("rect")
+                .attr("x", -23)
+                .attr("y", -10)
+                .attr("width", 70)
+                .attr("height", 20)
+                .attr("rx", 10)
+                .style("fill", "#800000"); //d 代表数据，也就是与某元素绑定的数据。
+
+
+            nodeEnter.append("text")
+                .attr("x", function (d) {
+                    return d.children || d._children ? 13 : 13;
+                })
+                .attr("dy", "10")
+                .attr("text-anchor", "middle")
+                .text(function (d) {
+                    return d.name;
+                })
+                .style("fill", "white")
+                .style("fill-opacity", 1);
+            // Transition nodes to their new position.将节点过渡到一个新的位置-----主要是针对节点过渡过程中的过渡效果
+            //node就是保留的数据集，为原来数据的图形添加过渡动画。首先是整个组的位置
+            var nodeUpdate = node.transition() //开始一个动画过渡
+                .duration(duration) //过渡延迟时间,此处主要设置的是圆圈节点随斜线的过渡延迟
+                .attr("transform", function (d) {
+                    return "translate(" + d.y + "," + d.x + ")";
+                });
+
+            nodeUpdate.select("rect")
+                .attr("x", -23)
+                .attr("y", -10)
+                .attr("width", 70)
+                .attr("height", 20)
+                .attr("rx", 10)
+                .style("fill", "#800000");
+
+            nodeUpdate.select("text")
+                .attr("text-anchor", "middle")
+                .style("fill-opacity", 1);
+
+            // Transition exiting nodes to the parent's new position.过渡现有的节点到父母的新位置。
+            //最后处理消失的数据，添加消失动画
+            var nodeExit = node.exit().transition()
+                .duration(duration)
+                .attr("transform", function (d) {
+                    return "translate(" + source.y + "," + source.x + ")";
+                })
+                .remove();
+
+            nodeExit.select("circle")
+                .attr("r", 1e-6);
+
+
+            nodeExit.select("text")
+                .attr("text-anchor", "middle")
+                .style("fill-opacity", 1e-6);
+
+            // Update the links…线操作相关
+            //再处理连线集合
+            var link = svg.selectAll("path.link")
+                .data(links, function (d) {
+                    return d.target.id;
+                });
+
+
+            // Enter any new links at the parent's previous position.
+            //添加新的连线
+            link.enter().insert("path", "g")
+                .attr("class", "link")
+                .attr("d", function (d) {
+                    var o = {
+                        x: source.x0,
+                        y: source.y0
+                    };
+                    return diagonal({
+                        source: o,
+                        target: o
+                    }); //diagonal - 生成一个二维贝塞尔连接器, 用于节点连接图.
+                })
+                .attr('marker-end', 'url(#arrow)');
+
+            // Transition links to their new position.将斜线过渡到新的位置
+            //保留的连线添加过渡动画
+            link.transition()
+                .duration(duration)
+                .attr("d", diagonal);
+
+            // Transition exiting nodes to the parent's new position.过渡现有的斜线到父母的新位置。
+            //消失的连线添加过渡动画
+            link.exit().transition()
+                .duration(duration)
+                .attr("d", function (d) {
+                    var o = {
+                        x: source.x,
+                        y: source.y
+                    };
+                    return diagonal({
+                        source: o,
+                        target: o
+                    });
+                })
+                .remove();
+
+            // Stash the old positions for transition.将旧的斜线过渡效果隐藏
+            nodes.forEach(function (d) {
+                d.x0 = d.x;
+                d.y0 = d.y;
+            });
+        }
+
+        //定义一个将某节点折叠的函数
+        // Toggle children on click.切换子节点事件
+        function click(d) {
+            if (d.children) {
+                d._children = d.children;
+                d.children = null;
+            } else {
+                d.children = d._children;
+                d._children = null;
+            }
+            update(d);
+        }
+    }
+
+    //d3.select(self.frameElement).style("height", "500px");
+    // 定义菜单选项
+    var userMenuData = [
+        [{
+            text: "添加",
+            func: function () {
+                // id为节点id
+                var id = $(this).children("text").html();
+                id = id.substring(id.indexOf("(") + 1, id.indexOf(")"));
+                showDialog(id);
+            }
+        }, {
+            text: "修改",
+            func: function () {
+                var id = $(this).children("text").html();
+                id = id.substring(id.indexOf("(") + 1, id.indexOf(")"));
+                showEditDialog(id);
+            }
+        }, {
+            text: "禁用",
+            func: function () {
+                var id = $(this).children("text").html();
+                id = id.substring(id.indexOf("(") + 1, id.indexOf(")"));
+
+            }
+        }, {
+            text: "删除",
+            func: function () {
+                var id = $(this).children("text").html();
+                id = id.substring(id.indexOf("(") + 1, id.indexOf(")"));
+                deleteAppModule(id);
+            }
+        }]
+    ];
+    // 事件监听方式添加事件绑定
+    // $("g").smartMenu(userMenuData, {
+    //     name: "chatRightControl",
+    //     container: "g.node"
+    // });
+</script>
+</body>
+
+</html>
