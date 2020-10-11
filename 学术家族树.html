@@ -73,3 +73,176 @@
             "nianji": ""
         },]
     }];
+
+
+    function getdata() {
+        $('.svg-container').empty();
+        var text = $("#text").val(); //获取id为text的textarea的全部内容
+        var text2 = $("#text").val().split(/导师[:|：]?/g);
+        var new_add = $("#text").val().split(/\n[^(导师)][:|：]?/g); // 追加内容
+        var new_add_flag = []; // 追加内容的标识;
+        //console.log(new_add);
+        var text3 = text2.filter(item => { // 过滤数组空元素
+            if (item.length > 1) {
+                return item;
+            }
+        });
+        for (let i = 0; i < text3.length; i++) {
+            text3[i] = '导师：' + text3[i];
+        }
+        var text1 = text.split("\n\n");//针对多组数据输入的情况，以“\n\n"为关键字进行分组，调用split函数进行分割
+        //console.log(text1);
+        //console.log(text3);
+        text1 = text3;
+        for (var k = 0; k < text1.length; k++) { //text1.length用于得到分组的数量
+            //console.log(text1[k]);
+            new_add_flag = [];
+            new_add = text1[k].split(/\n[^(导师)][:|：]?/g);
+            new_add = new_add.filter(function (item) {
+                let rexp = new RegExp(/[0-9]+级?/, 'ig');
+                //console.log(rexp, item.indexOf('导师') == -1, !/[0-9]+级?/ig.test(item));
+                if (item.indexOf('导师') == -1 && !/[0-9]+级?/ig.test(item)) {
+                    new_add_flag.push(item.replace(/[:|：]+[^0]+/, ''));
+                    return item;
+                }
+            });
+            //console.log('过滤', new_add, new_add_flag);
+
+            var arry = text1[k].split("\n");//针对每一组数据，以“\n"为关键字进行分组，得到每条导师和学生的信息
+            var teacher = {
+                name: '',
+                nianji: '',
+                children: []
+            };
+            let zhiChengObj = {}; // 职称分类对象集合
+            let zhicheng_arr = []; // 全部职称是数组
+            let nianji_arr = []; // 年级的集合
+            let nianji = [];
+
+            for (var ii = 0; ii < arry.length; ii++) { // for2判断有没有重复的职称
+
+                if (/\n+/.test(arry[ii]) || arry[ii].length <= 1) {
+                    //console.log('匹配成功');
+                } else {
+                    var newarr = arry[ii].split("：");//针对每条导师和学生的信息，以“：”为关键字进行分组，可得到身份标签和身份信息
+
+                    let go_on = true;
+                    new_add_flag.forEach(function (item) {
+                        //console.log(item, newarr, newarr.includes(item.trim()));
+                        if (newarr.includes(item.trim())) {
+                            go_on = false;
+                        }
+                    });
+                    if (go_on) {
+                        //console.log(arry[ii]);
+                        //console.log(newarr);
+                        var a1 = newarr[0]; //获取身份标签，如导师、2016级博士生等，保存在a1变量
+                        let strIndex = a1.indexOf('级');
+                        let nianjiItem = a1.substring(0, strIndex + 1); // 年级
+                        let zhicheng = a1.substring(strIndex + 1); // 职称
+                        //console.log(nianjiItem);
+                        var type = [];
+                        var type1 = [];
+
+                        //console.log(zhicheng);
+
+                        if (ii != 0) {
+                            type1.name = zhicheng; // 职称
+                        }
+                        var a2 = newarr[1]; //获取身份信息，如天一、王二、吴五等，保存在a2变量 [字符串]
+                        //console.log(a2);
+                        var a3 = a2.split("、"); //针对每组身份信息，以“、”为关键字进行切分，得到每个人的名字信息 [数组]
+
+                        //console.log(a3);
+
+                        if (!zhicheng_arr.includes(zhicheng)) { //&& zhicheng.indexOf('生')!= -1
+                            //console.log('已经存在', zhicheng);
+                            zhicheng_arr.push(zhicheng);
+                            if (!zhiChengObj[zhicheng]) {
+                                zhiChengObj[zhicheng] = [];
+                            }
+                            zhiChengObj[zhicheng].push(...a3);
+                            nianji_arr.push(nianjiItem);
+                        } else { //if (zhicheng.indexOf('生')!= -1)
+                            if (!zhiChengObj[zhicheng]) {
+                                zhiChengObj[zhicheng] = [];
+                            }
+                            zhiChengObj[zhicheng].push(...a3);
+                            nianji_arr.push(nianjiItem);
+                        }
+                    }
+                }
+            }
+
+            nianji_arr = nianji_arr.filter(function (item) {
+                if (item.length > 1) return item;
+            });
+            // //console.log(zhicheng_arr);
+            // //console.log(zhiChengObj);
+            // //console.log(nianji_arr);
+
+            /***********************/
+            let currentIndex = 0;
+            for (let key in zhiChengObj) {
+                let type = [];
+                let type1 = [];
+                let zhicheng = key;  // 职称
+                let nianji = [];
+                let is_daoshi = key.indexOf('导师') != -1 ? true : false; // 是不是导师
+                let zhicheng_val = zhiChengObj[key]; // 职称对应的值
+                // //console.log(zhicheng);
+                // //console.log(zhicheng_val);
+                // //console.log(is_daoshi);
+
+                zhicheng_val.forEach(function (item, j) {
+                    let student = {};
+
+                    if (is_daoshi) {
+                        teacher.name = item;
+                    } else {
+                        student.name = item; //zhicheng_val[j]
+
+                        new_add_flag.forEach(function (flag, ind) {
+                            //console.log(flag, item);
+                            if (flag == item) {
+                                let cont = new_add[ind].replace(/[^0]*[:|：]+/, '');
+                                let cont_arr = cont.split('、');
+                                //console.log(cont_arr);
+                                cont_arr.forEach(function (child) {
+                                    if (!student.children) {
+                                        student.children = [];
+                                    }
+                                    student.children.push({name: child});
+                                });
+                            }
+                        });
+                        type.push(student);
+                        // //console.log(student);
+                    }
+                });
+
+                if (is_daoshi == false) {
+                    type1.name = zhicheng; // 职称
+                    nianji.push({name: nianji_arr[currentIndex], children: type}); // 年级
+                }
+                // //console.log(type1); // 职称
+                // //console.log(nianji_arr[currentIndex]); // 多少级
+                // //console.log(type); // 人
+                // //console.log(nianji); // 多少级
+                if (is_daoshi == false) {
+                    // type1.children = type;
+                    type1.children = nianji;
+                    teacher.children.push(type1);
+                }
+                //console.log(teacher);
+
+                currentIndex++;
+            }
+
+            treeData[k] = [];
+            treeData[k] = teacher;
+            maketree(k);
+        }
+    }
+
+    
